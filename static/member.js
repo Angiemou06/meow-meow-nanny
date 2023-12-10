@@ -8,6 +8,7 @@ let profile_picture = document.getElementById("profile-picture");
 let user_member_id
 let file_upload = document.getElementById("file-upload");
 let picture_form = document.getElementById("picture-form");
+let nanny_container = document.getElementById("nanny-container");
 
 nickname_submit.addEventListener('click',()=>{
     reviseMemberData();
@@ -48,6 +49,7 @@ function reviseMemberData(){
 window.onload = async function () {
     await checkUserStatusandData();
     getMemberData();
+    loveNannyList();
 }
 
 async function checkUserStatusandData() {
@@ -159,3 +161,44 @@ file_upload.addEventListener('change', () => {
     xhr.open('POST', '/api/picture', true);
     xhr.send(formData);
 })
+function loveNannyList(){
+    src = "/api/loveNanny"
+    fetch(src, {
+        method: "GET",
+        headers: {
+            'id': user_member_id,
+        }
+    })
+    .then(function(response) {
+        if (response) {
+            return response.json();
+        }
+    })
+    .then(function(data) {
+        // let i = 0;
+        // nanny_container.innerHTML = "";
+        // if(data["nannyName_list"]){
+        //     data["nannyName_list"].forEach(item =>{
+        //         const title = document.createElement('div');
+        //         title.className = 'title';
+        //         title.innerHTML = "我的最愛";
+        //         nanny_container.appendChild(title);
+        //         const addContainer = document.createElement('div');
+        //         addContainer.className = 'added-container';
+        //         nanny_container.appendChild(addContainer);
+        //         const addName = document.createElement('div');
+        //         const imgContainer = document.createElement('div');
+        //         imgContainer.className = "img-container";
+        //         addContainer.appendChild(imgContainer);
+        //         img = document.createElement('img');
+        //         img.className = "img";
+        //         img.src = data["shot_list"][i];
+        //         imgContainer.appendChild(img);
+        //         addName.className = 'added-name';
+        //         addName.innerHTML = item;
+        //         addContainer.appendChild(addName);
+        //         i++;
+        //     })
+        // }
+    })
+}

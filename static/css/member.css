@@ -8,8 +8,12 @@ body{
     display: flex;
     align-items: center;
     justify-content: center;
+    flex-wrap: wrap;
+    overflow-y: auto;
 }
 .profile-container{
+    margin-top: 50px;
+    margin-bottom: 50px;
     width: 80%;
     height: 80%;
     border: none;
@@ -19,6 +23,22 @@ body{
     display: flex;
     align-items: center;
     justify-content: center;
+}
+.nanny-container{
+    margin-bottom: 50px;
+    width: 80%;
+    height: 80%;
+    border: none;
+    outline: 1px solid #cccccc;
+    background-color: rgba(128,128,128,0.4);
+    border-radius: 15px;
+
+}
+.title{
+    font-weight: 500;
+    font-size: 24px;
+    margin-top: 30px;
+    margin-left: 40px;
 }
 .profile-revise-intro-container{
     display: flex;
@@ -173,6 +193,35 @@ label {
 input[type="file"] {
     display: none;
 }
+.added-container{
+    display: flex;
+    justify-content: space-between;
+    background-color: rgb(255, 255, 255,0.8);
+    padding: 12px;
+    margin-top: 20px;
+    margin-right: 20px;
+    border-radius: 5px;
+    width: 82%;
+    margin-left: 100px;
+    font-size: 20px;
+}
+.added-name{
+    font-size: 18px;
+}
+.img-container{
+    width: 50px;
+    height: 50px;
+    border-radius: 50%;
+    overflow: hidden;
+    border: 1px solid #000000;
+}
+.img{
+    width: 50px;
+    height: 50px;
+    object-fit: cover;
+    object-position: center center;
+}
+
 footer{
     height: 10vh;
     display: flex;

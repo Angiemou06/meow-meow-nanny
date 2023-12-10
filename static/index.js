@@ -81,23 +81,50 @@ function createMarker(){
         }
     })
     .then(function(data) {
-        data["nickname"].forEach((point_nickname, index) => {
-            marker = new google.maps.Marker({
-                map: map,
-                position: { lat: data["lat"][index], lng: data["lng"][index] },
-                title: point_nickname,
-                member_id:data["member_id"][index],
-                id:data["id"][index],
-                price: data["price"][index]
-            });
-            markers.push(marker);
+        
+        data["nickname"].forEach(async (point_nickname, index) => {
+            url = "/api/loveNanny"
+            let love = 0;
+            await fetch(url, {
+                method: "GET",
+                headers: {
+                    'id': user_member_id,
+                    'member_id':data["member_id"][index],
+                    'service_id':data["id"][index]
+                }
+            })
+            .then(function(response) {
+                if (response) {
+                    return response.json();
+                }
+            })
+            .then(function(loveData){
+                if (loveData["love"] == 1){
+                    love = 1;
+                }
+            })
+            .then(()=>{
+                marker = new google.maps.Marker({
+                    map: map,
+                    position: { lat: data["lat"][index], lng: data["lng"][index] },
+                    title: point_nickname,
+                    member_id:data["member_id"][index],
+                    id:data["id"][index],
+                    price: data["price"][index],
+                    love:love
+                });
+                markers.push(marker);
+            })
+            .then(()=>{
+                markerClick();
+            })
         });
-            markerClick();
     }) 
     .catch(error => {
         console.log('Network error:', error);
     })
 }
+
 let member_1_id;
 let member_2_id;
 function markerClick(){
@@ -107,6 +134,62 @@ function markerClick(){
             profile_container.style.display="none";
             profile_container.innerHTML="";
             profile_container.style.display="block";
+            const closeButton = document.createElement('button');
+            closeButton.className = "close-button";
+            closeButton.addEventListener('click',()=>{
+                profile_container.style.display="none";
+                profile_container.innerHTML="";
+            });
+            profile_container.appendChild(closeButton);
+            const loveButton = document.createElement('button');
+            loveButton.className = "love-button";
+            if (marker.love == 0){
+                let ct = 2;
+                loveButton.style.backgroundImage = `url("static/image/heart.png")`
+                loveButton.addEventListener('click',()=>{
+                    ct ++;
+                    if (ct % 2 != 0){
+                        loveButton.style.backgroundImage = `url("static/image/love.png")`;
+                        marker.love = 1 ;
+                        loveData = {
+                            "id":user_member_id,
+                            "nannyId":marker.member_id,
+                            "service_id":marker.id,
+                        };
+                        fetch("/api/loveNanny",{method: "POST",headers: {'Content-Type': 'application/json'},body: JSON.stringify(loveData)})
+                    }
+                    else{
+                        loveButton.style.backgroundImage = `url("static/image/heart.png")`
+                        marker.love = 0 ;
+                        fetch(`/api/loveNanny?id=${user_member_id}&nannyId=${marker.member_id}&service_id=${marker.id}`, {method: "DELETE",})
+                    }
+                    
+                });
+            }
+            else{
+                ct = 1 ;
+                loveButton.style.backgroundImage = `url("static/image/love.png")`
+                loveButton.addEventListener('click',()=>{
+                    ct ++ ;
+                    if (ct %2 == 0){
+                        loveButton.style.backgroundImage = `url("static/image/heart.png")`;
+                        marker.love = 0 ;
+                        fetch(`/api/loveNanny?id=${user_member_id}&nannyId=${marker.member_id}&service_id=${marker.id}`, {method: "DELETE",})
+                    }
+                    else{
+                        loveButton.style.backgroundImage = `url("static/image/love.png")`;
+                        marker.love = 1 ;
+                        loveData = {
+                            "id":user_member_id,
+                            "nannyId":marker.member_id,
+                            "service_id":marker.id,
+                        };
+                        fetch("/api/loveNanny",{method: "POST",headers: {'Content-Type': 'application/json'},body: JSON.stringify(loveData)})
+                    }
+                    
+                });
+            }
+            profile_container.appendChild(loveButton);
             const addName = document.createElement('div');
             addName.innerHTML = marker.title;
             addName.className = "add-name";
@@ -178,9 +261,7 @@ function markerClick(){
                     }
                 })
                 .then(function(data) {
-                    console.log(data["room_id"]);
-                    // localStorage.setItem('myData', JSON.stringify({ key: 'value' }));
-                    // window.location="/message";
+                    window.location="/message";
                 })
                 .catch(error => {
                     console.log('Network error:', error);

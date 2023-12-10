@@ -17,7 +17,7 @@
 import boto3
 from flask import *
 import mysql.connector
-import mysql.connector.pooling
+from mysql.connector import pooling
 
 import os
 import datetime
@@ -36,10 +36,10 @@ db_config = {
     "user": os.getenv("DB_USER"),
     "password": os.getenv("DB_PASSWORD"),
     "database": os.getenv("DB_DATABASE"),
+    "pool_reset_session":True,
 }
 
 connection_pool = mysql.connector.pooling.MySQLConnectionPool(**db_config)
-
 
 def connect_to_database():
     try:
@@ -50,10 +50,10 @@ def connect_to_database():
         print(f"Error connecting to database: {e}")
         return None, None
     
-#  建立member table
+#  建立 member table
 # con, cursor = connect_to_database()
 # cursor.execute(
-#     "CREATE TABLE member(id INT PRIMARY KEY AUTO_INCREMENT, name VARCHAR(10) NOT NULL, birthday DATE NOT NULL, user_id VARCHAR(20) NOT NULL, email VARCHAR(100) NOT NULL, password VARCHAR(100) NOT NULL, nickname VARCHAR(20) NOT NULL, shot VARCHAR(1000) DEFAULT 'https://d2bbn8sfov3acj.cloudfront.net/user.png' NOT NULL, introduction VARCHAR(1000))")
+#     "CREATE TABLE member(id INT PRIMARY KEY AUTO_INCREMENT, name VARCHAR(10) NOT NULL, birthday DATE NOT NULL, user_id VARCHAR(20) NOT NULL, email VARCHAR(100) NOT NULL, password VARCHAR(100) NOT NULL, nickname VARCHAR(20) NOT NULL, shot VARCHAR(1000) DEFAULT 'https://d2bbn8sfov3acj.cloudfront.net/user.png' NOT NULL, introduction VARCHAR(1000), score DECIMAL(10, 2) DEFAULT 0)")
 # con.commit()
 # cursor.close()
 # con.close()
@@ -96,13 +96,20 @@ def connect_to_database():
 # cursor.close()
 # con.close()
 
-# test table
+# 建立 loveNanny table
 # con, cursor = connect_to_database()
-# cursor.execute("DROP TABLE booking")
+# cursor.execute("CREATE TABLE loveNanny(id INT PRIMARY KEY AUTO_INCREMENT, userId INT NOT NULL, nannyId INT NOT NULL, service_id INT NOT NULL)")
 # con.commit()
 # cursor.close()
 # con.close()
-# cursor.execute("SELECT * FROM booking")
+
+# test table
+# con, cursor = connect_to_database()
+# cursor.execute("DROP TABLE loveNanny")
+# con.commit()
+# cursor.close()
+# con.close()
+# cursor.execute("SELECT * FROM loveNanny")
 # data = cursor.fetchall()
 # print(data)
 # cursor.close()
@@ -251,8 +258,6 @@ def addService():
         information = cursor.fetchall()
         cursor.close()
         con.close()
-        if (len(information)>5):
-            return jsonify({"error": True, "message": "資料筆數超過限制"}), 400
         if data:
             con, cursor = connect_to_database()
             cursor.execute(
@@ -470,7 +475,9 @@ def memberData():
 
         else:
             contact_id = request.headers.get('id')
+            print(datetime.datetime.now())
             con, cursor = connect_to_database()
+            print(datetime.datetime.now())
             cursor.execute("SELECT id, nickname, shot, introduction,email FROM member WHERE id = %s",(contact_id,))
             existing_contact = cursor.fetchone()
             cursor.close()
@@ -765,7 +772,80 @@ def orderCheck():
             "paid_list":paid_list
         }
         return jsonify(data), 200
+@app.route("/api/loveNanny", methods=["POST","GET","DELETE"])
+def loveNanny():
+    if request.method == "POST":
+        data = request.get_json()
+        id = data["id"]
+        nannyId = data["nannyId"]
+        service_id = data["service_id"]
+        con, cursor = connect_to_database()
+        cursor.execute("INSERT INTO loveNanny(userId,nannyId,service_id) VALUES (%s,%s,%s)", (id,nannyId,service_id))
+        con.commit()
+        cursor.close()
+        con.close()
+        return jsonify({"ok": True, "message": "成功"}), 200
+    elif request.method == "GET":
+        id = request.headers.get('id')
+        nannyId = request.headers.get('member_id')
+        service_id = request.headers.get('service_id')
+        if (id and nannyId and service_id):
+            con, cursor = connect_to_database()
+            cursor.execute("SELECT id FROM loveNanny WHERE userId = %s and nannyId = %s and service_id=%s", (id,nannyId,service_id))
+            existing = cursor.fetchone()
+            cursor.close()
+            con.close()
+            data = {
+                "love":0
+            }
+            if existing:
+                data = {
+                    "love":1
+                }
+        else:
+            con, cursor = connect_to_database()
+            cursor.execute("SELECT nannyId,service_id FROM loveNanny WHERE userId = %s", (id,))
+            existing = cursor.fetchall()
+            cursor.close()
+            con.close()
+            nannyName_list=[]
+            address_list=[]
+            price_list=[]
+            shot_list = []
+            number = len(existing)
+            for i in range(0,number):
+                con, cursor = connect_to_database()
+                cursor.execute("SELECT name,price FROM service WHERE id = %s", (existing[i][1],))
+                existing = cursor.fetchone()
+                cursor.close()
+                con.close()
+                address_list.append(existing[0])
+                price_list.append(existing[1])
+                con, cursor = connect_to_database()
+                cursor.execute("SELECT nickname,shot FROM member WHERE id = %s", (existing[i][0],))
+                existing = cursor.fetchone()
+                cursor.close()
+                con.close()
+                nannyName_list.append(existing[0])
+                shot_list.append(existing[1])
+            data = {
+                "nannyName_list":nannyName_list,
+                "address_list":address_list,
+                "price_list":price_list,
+                "shot_list":shot_list
+            }
 
+        return jsonify(data), 200
+    else:
+        id = request.args.get('id')
+        nannyId = request.args.get('nannyId')
+        service_id = request.args.get('service_id')
+        con, cursor = connect_to_database()
+        cursor.execute("DELETE FROM loveNanny WHERE userId = %s and nannyId = %s and service_id=%s",(id,nannyId,service_id))
+        con.commit()
+        cursor.close()
+        con.close()
+        return jsonify({"ok": True, "message": "成功"}), 200
 if __name__ == '__main__':
     CORS(app, resources={r"/*": {"origins": "http://localhost:3000"}})
     socketio.run(app,host="0.0.0.0",port=3000,debug=True)

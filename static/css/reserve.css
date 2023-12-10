@@ -53,8 +53,9 @@ footer{
 }
 .picture{
     object-fit: cover;
+    object-position: center center;
     width: 150px;
-    width: 150px;
+    height: 150px;
 }
 .nickname{
     position: absolute;
